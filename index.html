@@ -1,1 +1,141 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Io Page Viewer</title>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: #131c2e;
+            --accent-color: #38bdf8;
+            --text-color: #e2e8f0;
+            --border-color: #1e293b;
+        }
 
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 1.25rem;
+            color: var(--accent-color);
+        }
+
+        nav a {
+            color: var(--text-color);
+            text-decoration: none;
+            margin-left: 1rem;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        nav a:hover {
+            color: var(--accent-color);
+        }
+
+        main {
+            flex: 1;
+            padding: 2rem;
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        #content-box {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 2rem;
+            min-height: 400px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .loading {
+            text-align: center;
+            color: #94a3b8;
+            margin-top: 4rem;
+        }
+
+        .error {
+            color: #f87171;
+            text-align: center;
+            margin-top: 4rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>System Gateway</h1>
+        <nav>
+            <a href="?p=1">ページ 1</a>
+            <a href="?p=2">ページ 2</a>
+        </nav>
+    </header>
+
+    <main>
+        <div id="content-box">
+            <div class="loading">ページをロード中...</div>
+        </div>
+    </main>
+
+    <script>
+        // ここを君のGitHubアカウント名とリポジトリ名に書き換えてね！
+        const GITHUB_USER = "YOUR_GITHUB_USERNAME";
+        const REPO_NAME = "YOUR_REPO_NAME";
+        const BRANCH = "main";
+
+        // URLのパラメータ (?p=1 など) を取得
+        const urlParams = new URLSearchParams(window.location.search);
+        const pageId = urlParams.get('p') || '1'; // デフォルトは 1
+
+        const contentBox = document.getElementById('content-box');
+
+        // jsDelivrのURLを組み立てる
+        const targetUrl = `https://cdn.jsdelivr.net/gh/${GITHUB_USER}/${REPO_NAME}@${BRANCH}/pages/${pageId}.html`;
+
+        // 外部のHTMLファイルをfetchで取得する
+        fetch(targetUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`ページが見つからなかったよ (Error: ${response.status})`);
+                }
+                return response.text();
+            })
+            .then(html => {
+                // 取得したHTMLをそのまま表示枠に埋め込む
+                contentBox.innerHTML = html;
+            })
+            .catch(error => {
+                contentBox.innerHTML = `
+                    <div class="error">
+                        <h2>読み込みエラー</h2>
+                        <p>${error.message}</p>
+                        <p style="margin-top: 1rem; font-size: 0.85rem; color: #64748b;">URLやファイルが存在するか確認してね！</p>
+                    </div>
+                `;
+            });
+    </script>
+</body>
+</html>
