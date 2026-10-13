@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Io Admin Panel</title>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: #131c2e;
+            --accent-color: #38bdf8;
+            --text-color: #e2e8f0;
+            --border-color: #1e293b;
+            --danger-color: #f87171;
+            --success-color: #34d399;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 1.25rem;
+            color: var(--accent-color);
+        }
+
+        main {
+            flex: 1;
+            padding: 2rem;
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        #content-box {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 2rem;
+            min-height: 400px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .admin-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .admin-container h2 {
+            color: var(--accent-color);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+
+        input[type="text"], input[type="password"], textarea {
+            background-color: #090d16;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.75rem;
+            color: var(--text-color);
+            font-family: monospace;
+            font-size: 0.95rem;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 250px;
+        }
+
+        button {
+            background-color: var(--accent-color);
+            color: #0b0f19;
+            border: none;
+            border-radius: 6px;
+            padding: 0.75rem 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .msg {
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .error {
+            color: var(--danger-color);
+            text-align: center;
+            margin-top: 4rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Io Admin Panel</h1>
+    </header>
+
+    <main>
+        <div id="content-box">
+            <!-- パスワード入力画面（初期表示） -->
+            <div class="admin-container" id="login-box">
+                <h2>🔐 管理者ログイン</h2>
+                <div class="form-group">
+                    <label>パスワードを入力してね</label>
+                    <input type="password" id="pass-input" placeholder="パスワード">
+                </div>
+                <button id="login-btn">ログイン</button>
+                <div id="login-msg" class="msg"></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const contentBox = document.getElementById('content-box');
+
+        document.getElementById('login-btn').addEventListener('click', () => {
+            const pass = document.getElementById('pass-input').value;
+            const msg = document.getElementById('login-msg');
+
+            if (pass === '1205') {
+                // 認証成功：エディタ画面に切り替え
+                contentBox.innerHTML = `
+                    <div class="admin-container">
+                        <h2>⚙️ ページ管理・エディタ</h2>
+                        <p style="font-size: 0.9rem; color: #94a3b8;">ブラウザ内に新しいページのHTMLを保存・追加できるよ！</p>
+                        
+                        <div class="form-group">
+                            <label>ページ番号（例: 3, secret など）</label>
+                            <input type="text" id="save-page-id" placeholder="例: 3">
+                        </div>
+
+                        <div class="form-group">
+                            <label>HTMLコード</label>
+                            <textarea id="save-html-code" placeholder="<div>ここに新しいページのHTMLを書く</div>"></textarea>
+                        </div>
+
+                        <button id="save-btn">保存して公開する</button>
+                        <div id="save-msg" class="msg"></div>
+                    </div>
+                `;
+
+                document.getElementById('save-btn').addEventListener('click', () => {
+                    const pid = document.getElementById('save-page-id').value.trim();
+                    const code = document.getElementById('save-html-code').value;
+                    const saveMsg = document.getElementById('save-msg');
+
+                    if (!pid) {
+                        saveMsg.style.color = 'var(--danger-color)';
+                        saveMsg.textContent = 'エラー: ページ番号を入力してね！';
+                        return;
+                    }
+
+                    localStorage.setItem('io_custom_page_' + pid, code);
+                    saveMsg.style.color = 'var(--success-color)';
+                    saveMsg.textContent = `成功！ ページ「${pid}`を保存したよ！`;
+                });
+
+            } else {
+                msg.style.color = 'var(--danger-color)';
+                msg.textContent = 'パスワードが違うよ！';
+            }
+        });
+    </script>
+</body>
+</html>
