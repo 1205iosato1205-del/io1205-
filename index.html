@@ -73,7 +73,6 @@
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
         }
 
-        /* 管理者画面のスタイル */
         .admin-container {
             display: flex;
             flex-direction: column;
@@ -146,9 +145,9 @@
     <header>
         <h1>Io System</h1>
         <nav id="nav-links">
-            <a href="?p=1">ページ 1</a>
-            <a href="?p=2">ページ 2</a>
-            <a href="?admin=1205" style="color: var(--accent-color); font-weight: bold;">⚙️ 管理画面</a>
+            <a href="#p=1">ページ 1</a>
+            <a href="#p=2">ページ 2</a>
+            <a href="#admin=1205" style="color: var(--accent-color); font-weight: bold;">⚙️ 管理画面</a>
         </nav>
     </header>
 
@@ -159,15 +158,28 @@
     </main>
 
     <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const adminPass = urlParams.get('admin');
-        const pageId = urlParams.get('p') || '1';
-        const contentBox = document.getElementById('content-box');
+        // URLのハッシュ (# 以降) を解析する関数
+        function getHashParams() {
+            const hash = window.location.hash.substring(1);
+            const params = {};
+            hash.split('&').forEach(part => {
+                const item = part.split('=');
+                if (item.length === 2) {
+                    params[item[0]] = item[1];
+                }
+            });
+            return { hash, params };
+        }
 
-        // ① 管理画面モードの処理 (?admin=1205)
-        if (adminPass !== null) {
+        const { hash, params } = getHashParams();
+        const contentBox = document.getElementById('content-box');
+        const pageId = params.p || '1';
+
+        // ① 管理画面モードの処理 (#admin=1205)
+        if (hash.startsWith('admin=')) {
+            const adminPass = hash.split('=')[1];
+
             if (adminPass === '1205') {
-                // パスワード一致：管理エディタを表示
                 contentBox.innerHTML = `
                     <div class="admin-container">
                         <h2>⚙️ ページ管理・エディタ</h2>
@@ -199,14 +211,12 @@
                         return;
                     }
 
-                    // ブラウザのlocalStorageに保存
                     localStorage.setItem('io_custom_page_' + pid, code);
                     msgDiv.style.color = 'var(--success-color)';
-                    msgDiv.textContent = `成功！ ページ「${pid}」を保存したよ！ (?p=${pid} でアクセスしてね)`;
+                    msgDiv.textContent = `成功！ ページ「${pid}」を保存したよ！ (#p=${pid} でアクセスしてね)`;
                 });
 
             } else {
-                // パスワード間違い
                 contentBox.innerHTML = `
                     <div class="error">
                         <h2>アクセス拒否</h2>
@@ -215,15 +225,12 @@
                 `;
             }
         } else {
-            // ② 通常のページ閲覧モード (?p=...)
-            // まずブラウザのlocalStorageにカスタム保存されたデータがないかチェック
+            // ② 通常のページ閲覧モード (#p=...)
             const localSavedHtml = localStorage.getItem('io_custom_page_' + pageId);
 
             if (localSavedHtml) {
-                // ローカルに保存されていればそれを即座に表示！
                 contentBox.innerHTML = localSavedHtml;
             } else {
-                // なければjsDelivr経由でGitHubからファイルをfetchする
                 const targetUrl = `https://cdn.jsdelivr.net/gh/1205iosato1205-del/io1205i@main/pages/${pageId}.html`;
 
                 fetch(targetUrl)
