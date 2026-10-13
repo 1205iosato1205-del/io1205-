@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Io CDN Page Loader</title>
+    <title>Io Dynamic CDN & Admin Viewer</title>
     <style>
         :root {
             --bg-color: #0b0f19;
@@ -11,6 +11,8 @@
             --accent-color: #38bdf8;
             --text-color: #e2e8f0;
             --border-color: #1e293b;
+            --danger-color: #f87171;
+            --success-color: #34d399;
         }
 
         * {
@@ -71,70 +73,183 @@
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
         }
 
-        .loading {
+        /* 管理者画面のスタイル */
+        .admin-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .admin-container h2 {
+            color: var(--accent-color);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+
+        input[type="text"], textarea {
+            background-color: #090d16;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.75rem;
+            color: var(--text-color);
+            font-family: monospace;
+            font-size: 0.95rem;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 250px;
+        }
+
+        button {
+            background-color: var(--accent-color);
+            color: #0b0f19;
+            border: none;
+            border-radius: 6px;
+            padding: 0.75rem 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .msg {
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .loading, .error {
             text-align: center;
             color: #94a3b8;
             margin-top: 4rem;
         }
 
         .error {
-            color: #f87171;
-            text-align: center;
-            margin-top: 4rem;
+            color: var(--danger-color);
         }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>CDN Loader Gateway</h1>
-        <nav>
-            <!-- リンクをクリックすると ?p=1 や ?p=2 に切り替わる -->
+        <h1>Io System</h1>
+        <nav id="nav-links">
             <a href="?p=1">ページ 1</a>
             <a href="?p=2">ページ 2</a>
+            <a href="?admin=1205" style="color: var(--accent-color); font-weight: bold;">⚙️ 管理画面</a>
         </nav>
     </header>
 
     <main>
         <div id="content-box">
-            <div class="loading">jsDelivrから読み込み中...</div>
+            <div class="loading">読み込み中...</div>
         </div>
     </main>
 
     <script>
-        // URLのパラメータ (?p=1 など) を取得。なければ '1' をデフォルトにする
         const urlParams = new URLSearchParams(window.location.search);
+        const adminPass = urlParams.get('admin');
         const pageId = urlParams.get('p') || '1';
-
         const contentBox = document.getElementById('content-box');
 
-        // 君が使いたいと言っていた jsDelivr のCDN URLをここで直接組み立てる！
-        const targetUrl = `https://cdn.jsdelivr.net/gh/1205iosato1205-del/io1205i@main/pages/${pageId}.html`;
-
-        // jsDelivrのURLからHTMLファイルをfetch（取得）して画面に反映する
-        fetch(targetUrl)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`ページが見つからなかったよ (Error: ${response.status})`);
-                }
-                return response.text();
-            })
-            .then(html => {
-                // 取得したHTMLコードをそのまま画面（#content-box）の中に埋め込む
-                contentBox.innerHTML = html;
-            })
-            .catch(error => {
+        // ① 管理画面モードの処理 (?admin=1205)
+        if (adminPass !== null) {
+            if (adminPass === '1205') {
+                // パスワード一致：管理エディタを表示
                 contentBox.innerHTML = `
-                    <div class="error">
-                        <h2>読み込みエラー</h2>
-                        <p>${error.message}</p>
-                        <p style="margin-top: 1rem; font-size: 0.85rem; color: #64748b;">
-                            指定した jsDelivr のURLにファイルが存在するか確認してね！<br>
-                            <code style="color: #38bdf8;">${targetUrl}</code>
-                        </p>
+                    <div class="admin-container">
+                        <h2>⚙️ ページ管理・エディタ</h2>
+                        <p style="font-size: 0.9rem; color: #94a3b8;">ブラウザ内に新しいページのHTMLを保存・追加できるよ！</p>
+                        
+                        <div class="form-group">
+                            <label>ページ番号（例: 3, secret など）</label>
+                            <input type="text" id="save-page-id" placeholder="例: 3">
+                        </div>
+
+                        <div class="form-group">
+                            <label>HTMLコード</label>
+                            <textarea id="save-html-code" placeholder="<div>ここに新しいページのHTMLを書く</div>"></textarea>
+                        </div>
+
+                        <button id="save-btn">保存して公開する</button>
+                        <div id="save-msg" class="msg"></div>
                     </div>
                 `;
-            });
+
+                document.getElementById('save-btn').addEventListener('click', () => {
+                    const pid = document.getElementById('save-page-id').value.trim();
+                    const code = document.getElementById('save-html-code').value;
+                    const msgDiv = document.getElementById('save-msg');
+
+                    if (!pid) {
+                        msgDiv.style.color = 'var(--danger-color)';
+                        msgDiv.textContent = 'エラー: ページ番号を入力してね！';
+                        return;
+                    }
+
+                    // ブラウザのlocalStorageに保存
+                    localStorage.setItem('io_custom_page_' + pid, code);
+                    msgDiv.style.color = 'var(--success-color)';
+                    msgDiv.textContent = `成功！ ページ「${pid}」を保存したよ！ (?p=${pid} でアクセスしてね)`;
+                });
+
+            } else {
+                // パスワード間違い
+                contentBox.innerHTML = `
+                    <div class="error">
+                        <h2>アクセス拒否</h2>
+                        <p>パスワードが違うよ！正しいURLを確認してね。</p>
+                    </div>
+                `;
+            }
+        } else {
+            // ② 通常のページ閲覧モード (?p=...)
+            // まずブラウザのlocalStorageにカスタム保存されたデータがないかチェック
+            const localSavedHtml = localStorage.getItem('io_custom_page_' + pageId);
+
+            if (localSavedHtml) {
+                // ローカルに保存されていればそれを即座に表示！
+                contentBox.innerHTML = localSavedHtml;
+            } else {
+                // なければjsDelivr経由でGitHubからファイルをfetchする
+                const targetUrl = `https://cdn.jsdelivr.net/gh/1205iosato1205-del/io1205i@main/pages/${pageId}.html`;
+
+                fetch(targetUrl)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`ページが見つからなかったよ (Error: ${response.status})`);
+                        }
+                        return response.text();
+                    })
+                    .then(html => {
+                        contentBox.innerHTML = html;
+                    })
+                    .catch(error => {
+                        contentBox.innerHTML = `
+                            <div class="error">
+                                <h2>読み込みエラー</h2>
+                                <p>${error.message}</p>
+                                <p style="margin-top: 1rem; font-size: 0.85rem; color: #64748b;">
+                                    指定した jsDelivr のURL、またはローカル保存にページが存在しません。<br>
+                                    <code style="color: var(--accent-color);">${targetUrl}</code>
+                                </p>
+                            </div>
+                        `;
+                    });
+            }
+        }
     </script>
 </body>
 </html>
