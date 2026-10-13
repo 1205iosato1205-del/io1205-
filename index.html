@@ -42,6 +42,7 @@
         h1 {
             font-size: 1.25rem;
             color: var(--accent-color);
+            cursor: pointer;
         }
 
         nav a {
@@ -143,7 +144,7 @@
 <body>
 
     <header>
-        <h1>Io System</h1>
+        <h1 onclick="location.hash='#p=1'">Io System</h1>
         <nav id="nav-links">
             <a href="#p=1">ページ 1</a>
             <a href="#p=2">ページ 2</a>
@@ -158,8 +159,8 @@
     </main>
 
     <script>
-        // URLのハッシュ (# 以降) を解析する関数
-        function getHashParams() {
+        // URLのハッシュを解析して画面をレンダリングするメイン関数
+        function renderPage() {
             const hash = window.location.hash.substring(1);
             const params = {};
             hash.split('&').forEach(part => {
@@ -168,95 +169,103 @@
                     params[item[0]] = item[1];
                 }
             });
-            return { hash, params };
-        }
 
-        const { hash, params } = getHashParams();
-        const contentBox = document.getElementById('content-box');
-        const pageId = params.p || '1';
+            const contentBox = document.getElementById('content-box');
+            const pageId = params.p || '1';
 
-        // ① 管理画面モードの処理 (#admin=1205)
-        if (hash.startsWith('admin=')) {
-            const adminPass = hash.split('=')[1];
+            // ① 管理画面モード (#admin=1205)
+            if (hash.startsWith('admin=')) {
+                const adminPass = hash.split('=')[1];
 
-            if (adminPass === '1205') {
-                contentBox.innerHTML = `
-                    <div class="admin-container">
-                        <h2>⚙️ ページ管理・エディタ</h2>
-                        <p style="font-size: 0.9rem; color: #94a3b8;">ブラウザ内に新しいページのHTMLを保存・追加できるよ！</p>
-                        
-                        <div class="form-group">
-                            <label>ページ番号（例: 3, secret など）</label>
-                            <input type="text" id="save-page-id" placeholder="例: 3">
-                        </div>
-
-                        <div class="form-group">
-                            <label>HTMLコード</label>
-                            <textarea id="save-html-code" placeholder="<div>ここに新しいページのHTMLを書く</div>"></textarea>
-                        </div>
-
-                        <button id="save-btn">保存して公開する</button>
-                        <div id="save-msg" class="msg"></div>
-                    </div>
-                `;
-
-                document.getElementById('save-btn').addEventListener('click', () => {
-                    const pid = document.getElementById('save-page-id').value.trim();
-                    const code = document.getElementById('save-html-code').value;
-                    const msgDiv = document.getElementById('save-msg');
-
-                    if (!pid) {
-                        msgDiv.style.color = 'var(--danger-color)';
-                        msgDiv.textContent = 'エラー: ページ番号を入力してね！';
-                        return;
-                    }
-
-                    localStorage.setItem('io_custom_page_' + pid, code);
-                    msgDiv.style.color = 'var(--success-color)';
-                    msgDiv.textContent = `成功！ ページ「${pid}」を保存したよ！ (#p=${pid} でアクセスしてね)`;
-                });
-
-            } else {
-                contentBox.innerHTML = `
-                    <div class="error">
-                        <h2>アクセス拒否</h2>
-                        <p>パスワードが違うよ！正しいURLを確認してね。</p>
-                    </div>
-                `;
-            }
-        } else {
-            // ② 通常のページ閲覧モード (#p=...)
-            const localSavedHtml = localStorage.getItem('io_custom_page_' + pageId);
-
-            if (localSavedHtml) {
-                contentBox.innerHTML = localSavedHtml;
-            } else {
-                const targetUrl = `https://cdn.jsdelivr.net/gh/1205iosato1205-del/io1205i@main/pages/${pageId}.html`;
-
-                fetch(targetUrl)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`ページが見つからなかったよ (Error: ${response.status})`);
-                        }
-                        return response.text();
-                    })
-                    .then(html => {
-                        contentBox.innerHTML = html;
-                    })
-                    .catch(error => {
-                        contentBox.innerHTML = `
-                            <div class="error">
-                                <h2>読み込みエラー</h2>
-                                <p>${error.message}</p>
-                                <p style="margin-top: 1rem; font-size: 0.85rem; color: #64748b;">
-                                    指定した jsDelivr のURL、またはローカル保存にページが存在しません。<br>
-                                    <code style="color: var(--accent-color);">${targetUrl}</code>
-                                </p>
+                if (adminPass === '1205') {
+                    contentBox.innerHTML = `
+                        <div class="admin-container">
+                            <h2>⚙️ ページ管理・エディタ</h2>
+                            <p style="font-size: 0.9rem; color: #94a3b8;">ブラウザ内に新しいページのHTMLを保存・追加できるよ！</p>
+                            
+                            <div class="form-group">
+                                <label>ページ番号（例: 3, secret など）</label>
+                                <input type="text" id="save-page-id" placeholder="例: 3">
                             </div>
-                        `;
+
+                            <div class="form-group">
+                                <label>HTMLコード</label>
+                                <textarea id="save-html-code" placeholder="<div>ここに新しいページのHTMLを書く</div>"></textarea>
+                            </div>
+
+                            <button id="save-btn">保存して公開する</button>
+                            <div id="save-msg" class="msg"></div>
+                        </div>
+                    `;
+
+                    document.getElementById('save-btn').addEventListener('click', () => {
+                        const pid = document.getElementById('save-page-id').value.trim();
+                        const code = document.getElementById('save-html-code').value;
+                        const msgDiv = document.getElementById('save-msg');
+
+                        if (!pid) {
+                            msgDiv.style.color = 'var(--danger-color)';
+                            msgDiv.textContent = 'エラー: ページ番号を入力してね！';
+                            return;
+                        }
+
+                        localStorage.setItem('io_custom_page_' + pid, code);
+                        msgDiv.style.color = 'var(--success-color)';
+                        msgDiv.textContent = `成功！ ページ「${pid}」を保存したよ！ (#p=${pid} でアクセスしてね)`;
                     });
+
+                } else {
+                    contentBox.innerHTML = `
+                        <div class="error">
+                            <h2>アクセス拒否</h2>
+                            <p>パスワードが違うよ！正しいURLを確認してね。</p>
+                        </div>
+                    `;
+                }
+            } else {
+                // ② 通常のページ閲覧モード (#p=...)
+                // まずローカル保存されているかチェック
+                const localSavedHtml = localStorage.getItem('io_custom_page_' + pageId);
+
+                if (localSavedHtml) {
+                    contentBox.innerHTML = localSavedHtml;
+                } else {
+                    // なければjsDelivr経由でGitHubからfetch
+                    const targetUrl = `https://cdn.jsdelivr.net/gh/1205iosato1205-del/io1205-@main/pages/${pageId}.html`;
+                    
+                    contentBox.innerHTML = `<div class="loading">ページ ${pageId} を読み込み中...</div>`;
+
+                    fetch(targetUrl)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`ページが見つからなかったよ (Error: ${response.status})`);
+                            }
+                            return response.text();
+                        })
+                        .then(html => {
+                            contentBox.innerHTML = html;
+                        })
+                        .catch(error => {
+                            contentBox.innerHTML = `
+                                <div class="error">
+                                    <h2>読み込みエラー</h2>
+                                    <p>${error.message}</p>
+                                    <p style="margin-top: 1rem; font-size: 0.85rem; color: #64748b;">
+                                        指定した jsDelivr のURL、またはローカル保存にページが存在しません。<br>
+                                        <code style="color: var(--accent-color);">${targetUrl}</code>
+                                    </p>
+                                </div>
+                            `;
+                        });
+                }
             }
         }
+
+        // ページ読み込み時に実行
+        window.addEventListener('DOMContentLoaded', renderPage);
+
+        // 💡 超重要：URLのハッシュ（#p=1 など）が変わったときに自動で画面を再描画する！
+        window.addEventListener('hashchange', renderPage);
     </script>
 </body>
 </html>
